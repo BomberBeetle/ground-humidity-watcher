@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Measurer</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="jumbotron">
+            <h1>Plantinhas!</h1>
+            <p>Bem-Vindo ao painel de controle/mostrador de registros do meu projeto. Essa página pode demorar pra carregar por quê eu sou um bundão e não quero fazer um API decente!</p>
+        </div>
+        <div class="row">
+            <div class="col-xl-6" style="margin-top: 10px">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Umidade</h2>
+                </div>
+                <div class="card-body">
+                    <h3 >Umidade Atual: <span id="um-atual">Carregando...</span></h3>
+                    <p id="um-last-update">Carregando...</p>
+                    <h3 >Médias</h3>
+                    <p>Nas ultímas 24 horas: <span id="um-avg-day">Carregando...</span></p>
+                    <p>Nos ultímos 7 dias: <span id="um-avg-week">Carregando...</span></p>
+                </div>
+            </div>
+            </div>
+            <div class="col-xl-6" style="margin-top: 10px">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Luminosidade</h2>
+                </div>
+                <div class="card-body">
+                    <h3>Luminosidade Atual: <span  id="lum-atual">Carregando...</span></h3>
+                    <p id="lum-last-update">Carregando...</p>
+                    <h3 >Médias</h3>
+                    <p>Nas ultímas 24 horas: <span id="lum-avg-day">Carregando...</span></p>
+                    <p>Nos ultímos 7 dias: <span id="lum-avg-week">Carregando...</span></p>
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xl-10 offset-xl-1">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Tempo</th>
+                                <th>Umidade</th>
+                                <th>Luminosidade</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+</body>
+<script>
+    var xmlHttp = new XMLHttpRequest();
+    		xmlHttp.open( "GET", "log.json"); 
+    		xmlHttp.send( null );
+    		xmlHttp.onreadystatechange = function(){
+                if(xmlHttp.readyState === 4){
+                    var log = JSON.parse(xmlHttp.response)  
+    	            able = document.getElementById('table');
+    	            for(x of log['log']){
+    		            var row=document.getElementById('table').insertRow(0);
+    		            var y = row.insertCell(0);
+    		            var z = row.insertCell(1);
+                        var light = row.insertCell(2);
+    		            y.innerHTML=x['time'];
+    		            z.innerHTML=Math.round((100 - x['value']*(100/1023))*100)/100 + "%";
+                        light.innerHTML=Math.round((100 - x['light']*(100/1023))*100)/100 + "%";
+    	            }
+                    var sumLight = 0;
+                    let sumHum = 0;
+                    let dateNow = Date.now();
+                    for(let i = log['log'].length - 1; i > -1 ; i-- ){
+                        let iteratorDate = new Date(log['log'][i]['time']);
+                        if(iteratorDate.getTime() < dateNow - 86400000){
+                            var avgHumDay = sumHum / (log['log'].length - i - 1)
+                            var avgLumDay = sumLight / (log['log'].length - i - 1)
+                            break;
+                        }
+                        sumHum += log['log'][i]['value'];
+                        sumLight +=log['log'][i]['light'];
+                    }
+                    sumLight = 0;
+                    sumHum = 0;
+                    console.log(sumLight);
+                    for(let i = log['log'].length - 1; i > -1 ; i-- ){
+                        let iteratorDate = new Date(log['log'][i]['time']);
+                        if(iteratorDate.getTime() < dateNow - 604800000){
+                            var avgHumWeek = sumHum / (log['log'].length - i - 1)
+                            var avgLumWeek = sumLight / (log['log'].length - i - 1)
+                            console.log(`Iterator: ${i}; SumLight: ${sumLight}; avgLumWeek: ${avgLumWeek}`);
+                            break;
+                        }
+                        sumHum += log['log'][i]['value'];
+                        sumLight +=log['log'][i]['light'];
+                    }
+                    document.getElementById('um-avg-day').innerText = Math.round((100 - avgHumDay*(100/1023))*100)/100 + "%";
+                    document.getElementById('um-avg-week').innerText = Math.round((100 - avgHumWeek*(100/1023))*100)/100 + "%";
+                    document.getElementById('lum-avg-day').innerText = Math.round((100 - avgLumDay*(100/1023))*100)/100 + "%";
+                    document.getElementById('lum-avg-week').innerText = Math.round((100 - avgLumWeek*(100/1023))*100)/100 + "%";
+                    document.getElementById('um-atual').innerText =  Math.round((100 - log['log'].slice(-1)[0]['value']*(100/1023))*100)/100 + "%";
+                    document.getElementById('um-last-update').innerText = "Ultima atualização: " + log['log'].slice(-1)[0]['time'].slice(0, -3);
+                    document.getElementById('lum-atual').innerText = Math.round((100 - log['log'].slice(-1)[0]['light']*(100/1023))*100)/100 + "%";
+                    document.getElementById('lum-last-update').innerText = "Ultima atualização: " + log['log'].slice(-1)[0]['time'].slice(0, -3);
+                }
+            }
+</script>
+
+</html>
